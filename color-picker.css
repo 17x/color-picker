@@ -1,0 +1,49 @@
+.colorPickerWrap {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+
+.colorPickerWrap .backdrop {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+
+.colorPickerWrap .main {
+	background-color: #ffffff;
+	position: absolute;
+	box-shadow: 0 0 3px 0 #333333;
+	border-radius: 1px;
+}
+
+.colorPickerWrap .main::before,
+.colorPickerWrap .main::after {
+	position: absolute;
+	width: 0;
+	height: 0;
+	border-style: solid;
+}
+
+.colorPickerWrap .main.top::before {
+	content: "";
+	border-width: 0 50px 86.6px 50px;
+	border-color: transparent transparent #007bff transparent;
+}
+
+.colorPickerWrap .main.bottom::after {
+	content: "";
+	border-width: 86.6px 50px 0 50px;
+	border-color: #007bff transparent transparent transparent;
+}
+
+.colorPickerWrap .section-1 {
+}
+
+.colorPickerWrap .section-2 {
+}
+
+.colorPickerWrap .section-3 {
+}
