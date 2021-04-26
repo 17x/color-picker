@@ -41,11 +41,21 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1619346184399</updated>
-      <workItem from="1619346185456" duration="1837000" />
+      <workItem from="1619346185456" duration="16908000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="533" y="134" width="944" height="704" key="com.intellij.history.integration.ui.views.FileHistoryDialog" timestamp="1619425664142">
+      <screen x="0" y="23" width="1920" height="993" />
+    </state>
+    <state x="533" y="134" width="944" height="704" key="com.intellij.history.integration.ui.views.FileHistoryDialog/0.23.1920.993@0.23.1920.993" timestamp="1619425664142" />
+    <state width="600" height="428" key="javadoc.popup" timestamp="1619432928827">
+      <screen x="0" y="23" width="1920" height="993" />
+    </state>
+    <state width="600" height="428" key="javadoc.popup/0.23.1920.993@0.23.1920.993" timestamp="1619432928827" />
   </component>
 </project>
