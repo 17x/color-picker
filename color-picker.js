@@ -1,5 +1,132 @@
 const ColorHelpers = {
-    HSVtoRGB : (h, s, v) => {
+    StandardizeColor : (i) => {
+        let _f = false;
+        let t = Object.prototype.toString.call(i);
+        let rgba;
+        let hexa;
+        let hsva;
+        let hsla;
+
+        if(t === '[object String]'){
+            if(/rgb/g.test(i)){
+                rgba = ColorHelpers.RGBs2RGB(i);
+            } else if(/#/g.test(i)){
+                hexa = ColorHelpers.HEXs2HEX(i);
+                rgba = ColorHelpers.HEX2RGB(hexa);
+            } else{
+                _f = !0
+            }
+        } else if(t === '[object Object]'){
+            if(t.r && t.g && t.b){
+                rgba = { ...t };
+                hexa = ColorHelpers.RGB2HEX(rgba);
+            } else{
+                _f = !0
+            }
+        } else{
+            _f = !0
+        }
+
+        if(_f){
+            throw new Error('Input type error');
+        }
+
+        hsva = ColorHelpers.RGB2HSV(rgba)
+        hsla = ColorHelpers.RGB2HSV(hsva)
+        // if(Object)
+        /*  if(i.test(/rgb/g)){
+
+          }*/
+
+        return {
+            rgba,
+            hexa,
+            hsva,
+            hsla
+        };
+    },
+    HEX2RGB : ({ r, g, b, a = 'ff' }) => {
+        return {
+            r : parseInt(r, 16),
+            g : parseInt(g, 16),
+            b : parseInt(b, 16),
+            a : parseInt(a, 16)
+        };
+    },
+    HEXs2HEX : (s) => {
+        if(s.length < 7){
+            throw new Error('Input type error');
+        }
+        let hexa = {
+            r : s.substr(1, 2),
+            g : s.substr(3, 2),
+            b : s.substr(5, 2)
+        };
+
+        if(isNaN(s.substr(7, 2))){
+            hexa.a = s.substr(7, 2);
+        } else{
+            hexa.a = 'ff';
+        }
+
+        return hexa;
+    },
+    RGBs2RGB : (s) => {
+        let from = s.indexOf('(');
+        s = s.substring(from + 1, s.length - 1)
+             .split(',');
+        if(from === -1 || s.length < 3){
+            throw new Error('Input type error');
+        }
+
+        return {
+            r : Number(s[0]),
+            g : Number(s[1]),
+            b : Number(s[2]),
+            a : Number(s[3]) || 255
+        };
+    },
+    RGB2HEX : ({ r, g, b, a = 255 }) => {
+        return {
+            r : r.toString(16),
+            g : g.toString(16),
+            b : b.toString(16),
+            a : r.toString(16)
+        };
+    },
+    RGB2HSV : ({ r, g, b, a = 1 }) => {
+        var max = Math.max(r, g, b), min = Math.min(r, g, b),
+            d = max - min,
+            h,
+            s = (max === 0 ? 0 : d / max),
+            v = max / 255;
+
+        switch(max){
+            case min:
+                h = 0;
+                break;
+            case r:
+                h = (g - b) + d * (g < b ? 6 : 0);
+                h /= 6 * d;
+                break;
+            case g:
+                h = (b - r) + d * 2;
+                h /= 6 * d;
+                break;
+            case b:
+                h = (r - g) + d * 4;
+                h /= 6 * d;
+                break;
+        }
+
+        return {
+            h : h,
+            s : s,
+            v : v,
+            a
+        };
+    },
+    HSV2RGB : ({ h, s, v }) => {
         var r, g, b, i, f, p, q, t;
 
         i = Math.floor(h * 6);
@@ -33,43 +160,28 @@ const ColorHelpers = {
             b : Math.round(b * 255)
         };
     },
-    RGBtoHSV : (r, g, b) => {
-        var max = Math.max(r, g, b), min = Math.min(r, g, b),
-            d = max - min,
-            h,
-            s = (max === 0 ? 0 : d / max),
-            v = max / 255;
-
-        switch(max){
-            case min:
-                h = 0;
-                break;
-            case r:
-                h = (g - b) + d * (g < b ? 6 : 0);
-                h /= 6 * d;
-                break;
-            case g:
-                h = (b - r) + d * 2;
-                h /= 6 * d;
-                break;
-            case b:
-                h = (r - g) + d * 4;
-                h /= 6 * d;
-                break;
-        }
-
-        return {
-            h : h,
-            s : s,
-            v : v
-        };
-    },
     HSV2HSL : ({ h, s, v }) => {
         return {
             h,
             s : (s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h)) || 0,
             l : h / 2
         };
+    },
+    HSL2HSV : (h, s, l, a=1) => {
+        let _s
+        let _v
+
+        l *= 2
+        s *= (l <= 1) ? l : 2 - l
+        _v = (l + s) / 2
+        _s = (2 * s) / (l + s)
+
+        return {
+            h,
+            s: _s,
+            v: _v,
+            a
+        }
     },
     HUE_Data : [
         /*
@@ -147,75 +259,294 @@ class ColorPicker{
             background: transparent url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAJCAYAAADtj3ZXAAABgWlDQ1BIRCA3MDktQQAAKJGVjj9rWmEUh59XTUxRqARpHUp5IaV0uAZjB6vJ4h+ohgxiW1C36/VGA1d9ub5i8gGyZUmG0C4tbb9CSZYMGUOGZAgUCtLPUBACpYTb4ZI6hdDf9JwHzjk/CGhTKScE9Prarb0uyHqjKcMTIkRZJMdj0xqqfLW6wZ25/o4AuEqaSjmbld8/1nbHn77Nr394mtPG3XsARNr20AKxAFjtodUD4QCGpVwN4j2QHGulQZwBcbfeaIKYAPGOz7+AeKveaEIgBMTdt7UiBBJArOXzCyDW8fkVELO6ZhsCZcDwOwDwoFySmVQ2mb+n93+n54xufwggavffvQFiwBPKlJBkSJElSV7b2xqgOFA77lanq2VeKceWxUFPjbTtGrLSt5YNmU6tpADqjab0T09rCEA8upy5wWfILkFwb+Zah3B8AonzmXv2ER6uwtGFMl3zX3FxHbpvHm6+TPscLcDcT8+bPofwAdzse96fL5538xWCEzh1/gIkd2ngdRvKIgAAAAlwSFlzAAALEwAACxMBAJqcGAAABeBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQ4IDc5LjE2NDAzNiwgMjAxOS8wOC8xMy0wMTowNjo1NyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDIxLjAgKE1hY2ludG9zaCkiIHhtcDpDcmVhdGVEYXRlPSIyMDIxLTA0LTI1VDE4OjQ4OjM4KzA4OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMS0wNC0yNVQxODo1NDoyNCswODowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMS0wNC0yNVQxODo1NDoyNCswODowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJIRCA3MDktQSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpmYjVkYzQ1NC04ZTE0LTRhMGMtYTIzMS1kNmI1MTA4MjVjMjciIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NzMwMDA0NjQtM2YxYi00NjBkLWFmMzYtYjQ1MzgxMzY0ZGE4IiB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NzMwMDA0NjQtM2YxYi00NjBkLWFmMzYtYjQ1MzgxMzY0ZGE4Ij4gPHhtcE1NOkhpc3Rvcnk+IDxyZGY6U2VxPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY3JlYXRlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo3MzAwMDQ2NC0zZjFiLTQ2MGQtYWYzNi1iNDUzODEzNjRkYTgiIHN0RXZ0OndoZW49IjIwMjEtMDQtMjVUMTg6NDg6MzgrMDg6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4wIChNYWNpbnRvc2gpIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDpmYjVkYzQ1NC04ZTE0LTRhMGMtYTIzMS1kNmI1MTA4MjVjMjciIHN0RXZ0OndoZW49IjIwMjEtMDQtMjVUMTg6NTQ6MjQrMDg6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4wIChNYWNpbnRvc2gpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PvZ0lgsAAADNSURBVCiRnZAxi8JQEIT3RbBQUNMIXqEWNgo2Nlb5B/cv/QX7mpcfcWKb0oSE1+xr0q5kbMwRxePUge3mm1nGAAB9qCi19iMwtZair+Vyk1p7fBecLRbfBIAAkGP+wQtyzMiybAyASESGZVn2iqLoOeb/wEOe5/Oqqvoikvw2AyDv/favAMcM7/2k6ydVjVTVqKqp69qIyNQxp49gC9z8kaqO7prbCyFM2w8cM0IIyTOfaZpm1RnyTERkjLncVsU+SXZxHJ8ADIho3V39CrynEkQVDqOiAAAAAElFTkSuQmCC");
             bottom: -9px;
             left: 2px;
-        }    
+        }
+        .colorPickerWrap .section-middle{
+            height: 95px;
+            border-bottom: 1px solid #dfdfdf;
+            padding-top: 15px;
+        }
+        .colorPickerWrap .section-middle-a{
+            display: flex;
+            width: 200px;
+            margin: 0 auto;
+        }
+        .colorPickerWrap canvas{
+            display: block;            
+        }
         .colorPickerWrap .hsvCanvas {
-            display: block;
             cursor: pointer;
             width: 235px;
             height: 124px;
         }    
         .colorPickerWrap .sampleCanvas {
-            float: left;
             border-radius: 32px;
+            margin-right: 10px;
         }    
         .colorPickerWrap .hueWrap,
         .colorPickerWrap .alphaWrap {
             position: relative;
-            float: left;
+            /*float: left;*/
+            cursor: pointer;
+            width: 150px;
+            height: 10px;
             margin-left: 7px;
-        }    
+        }
+        .colorPickerWrap .hueWrap{
+            margin-bottom: 10px;
+        }
         .colorPickerWrap .hueHandle,
         .colorPickerWrap .alphaHandle {
             position: absolute;
+            width: 0;
+            height: 0;
+            left: 0;
+            top: 0;
+        }
+        .colorPickerWrap .hueHandle::after,
+        .colorPickerWrap .alphaHandle::after{
+            content: '';
+            position: absolute;
             left: -7px;
-            top: 2px;
+            top: -2px;
             width: 14px;
             height: 14px;
             border-radius: 50%;
             box-shadow: 0 0 4px 1px #999999;
             background-color: #f7f7f7;
-        }    
+        }
+        .colorPickerWrap .modeWrap{
+            clear: both;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            width: 210px;
+            height: 55px;
+            margin: 9px auto 0 auto;
+        }
+        .colorPickerWrap .modeWrap > div{
+            display: none;
+            width: 178px;
+        }
+        .colorPickerWrap p{
+            user-select: none;
+        }
+        .colorPickerWrap p,
+        .colorPickerWrap input{
+           margin: 0;
+           padding: 0;
+           text-align: center;
+           font-size: 12px;
+        }
+        .colorPickerWrap input{
+            color: #2d2d2d;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .colorPickerWrap .modeWrap p{          
+           color:#8b8b8e;
+           font-family: sans-serif;
+           height: 26px;
+           line-height: 26px;
+        }
+        .colorPickerWrap .modeWrap input{
+            height: 24px;
+            border: 1px solid #dcdbdc;
+        }
+        .colorPickerWrap .modeWrap .active{
+            display: flex;
+        }
+        .colorPickerWrap .mode-hex{
+            display: flex;
+            flex-direction: column;
+            align-self: center;
+            text-align: center;
+        }
+        .colorPickerWrap .mode-hex input{
+            width: 100%;
+        }
+        .colorPickerWrap .mode-rgba,
+        .colorPickerWrap .mode-hsva{
+            justify-content: space-between;
+        }
+        .colorPickerWrap .mode-rgba>div,
+        .colorPickerWrap .mode-hsva>div{
+            
+        }
+        .colorPickerWrap .mode-rgba>div>input,
+        .colorPickerWrap .mode-hsva>div>input{
+            width: 40px;
+        }
+        .colorPickerWrap .mode-hsva{}
+        .colorPickerWrap .switch{
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;      
+        }
+        .colorPickerWrap .switch:hover{
+            background-color: #d8d8d8;
+        }
+        .colorPickerWrap .switch::before,
+        .colorPickerWrap .switch::after{
+            content: '';
+            width: 0;
+            height: 0;
+            border-style: solid;
+            font-size: 0;
+        }
+        .colorPickerWrap .switch::before{            
+            margin-bottom: 4px;
+            border-width: 0 3px 4px 3px;
+            border-color: transparent transparent #1d1e21 transparent; 
+        }
+        .colorPickerWrap .switch::after{
+            border-width: 4px 3px 0 3px;
+            border-color: #1d1e21 transparent transparent transparent;                     
+        }
+        .colorPickerWrap .section-recent-wrap{
+        }
+        .colorPickerWrap .section-recent{
+            width: 216px;
+            height: 72px;
+            display: grid;
+            margin: 6px auto 0 auto;
+            grid-template-columns: repeat(9, 24px);
+        }
+        .colorPickerWrap .recent-item{
+            width: 12px;
+            height: 12px;
+            align-self: center;
+            justify-self: center;
+            border-radius: 2px;
+        }
+        .colorPickerWrap .recent-item:hover{
+            cursor:pointer;
+            box-shadow: 0 0 5px 1px #c5c5c5;
+        }
         </style>
         <div class="backdrop"></div>
         <div class="main bottom top">
             <div class="hsvWrap">
                 <canvas class="hsvCanvas"></canvas>
             </div>
-            <div>
-                <canvas class="sampleCanvas"></canvas>
-                <div class="hueWrap">
-                    <canvas class="hueCanvas"></canvas>
-                    <div class="hueHandle"></div>
+            <div class="section-middle">
+                <div class="section-middle-a">
+                    <canvas class="sampleCanvas"></canvas>
+                    <div>
+                        <div class="hueWrap">
+                            <canvas class="hueCanvas"></canvas>
+                            <div class="hueHandle"></div>
+                        </div>
+                        <div class="alphaWrap">
+                            <canvas class="alphaCanvas"></canvas>
+                            <div class="alphaHandle"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="alphaWrap">
-                    <canvas class="alphaCanvas"></canvas>
-                    <div class="alphaHandle"></div>
+                <div class="modeWrap">
+                    <div class="mode-hex">
+                        <div>
+                            <input type="text" />
+                            <p>HEX</p>
+                        </div>
+                    </div>
+                    <div class="mode-rgba">
+                        <div>
+                            <input type="text" />
+                            <p>R</p>
+                        </div>
+                        <div>
+                            <input type="text" />
+                            <p>G</p>
+                        </div>
+                        <div>
+                            <input type="text" />
+                            <p>B</p>
+                        </div>
+                        <div>
+                            <input type="text" />
+                            <p>A</p>
+                        </div>
+                    </div>
+                    <div class="mode-hsva active">
+                        <div>
+                            <input type="text" />
+                            <p>H</p>
+                        </div>
+                        <div>
+                            <input type="text" />
+                            <p>S</p>
+                        </div>
+                        <div>
+                            <input type="text" />
+                            <p>V</p>
+                        </div>
+                        <div>
+                            <input type="text" />
+                            <p>A</p>
+                        </div>
+                    </div>
+                    <span class="switch"></span>
                 </div>
             </div>
-            <div class="inputModeList">
-                <div class="mode-hex">
-                    <input type="text" />
-                </div>
+            <div class="section-recent-wrap">
+                <div class="section-recent"></div>
             </div>
         </div>
     `;
     static w = 235;
-    static h = 335;
+    static h = 320;
     static sampleLen = 32;
-    static HSVHeight = 124;
+    static HSVHeight = 120;
     static HSVPos = {
         x : 0,
         y : 0
     };
-    static hueWidth = 160;
+    static hueWidth = 150;
     static hueHeight = 10;
     static alphaHeight = 10;
+    static colorData = {
+        rgba : {
+            r : 255,
+            g : 255,
+            b : 255,
+            a : 1
+        },
+        hexa : {
+            r : 'ff',
+            g : 'ff',
+            b : 'ff',
+            a : 'ff'
+        },
+        hsva : {
+            r : 'ff',
+            g : 'ff',
+            b : 'ff',
+            a : 'ff'
+        },
+        hsla : {
+            r : 'ff',
+            g : 'ff',
+            b : 'ff',
+            a : 'ff'
+        }
+    };
+    static recent = new Array(27).fill({
+        r : 255,
+        g : 0,
+        b : 0,
+        a : 1
+    });
 
     static Open({ x = 0, y = 0, color = 'rgba(255,0,0,1)', returnType, onColorUpdate = null, onClose = null } = {}){
         let domWrap = document.createElement('div');
         // hexa
         // copy
-        let domMain = null
+        let domMain = null;
         const DisabledSelection = (event) => {
             event.preventDefault();
         };
@@ -226,10 +557,25 @@ class ColorPicker{
             d.style.height = h + 'px';
         };
         const CommonHandle = (canvas, handle, cb) => {
-            handle.onmousedown = () => {
+            canvas.onmousedown = handle.onmousedown = (event) => {
                 let _rect = canvas.getBoundingClientRect();
-                const move = ({ x, y }) => {
+                let w = _rect.width;
 
+                const move = ({ x }) => {
+                    let p;
+                    let l;
+
+                    x = x - _rect.x;
+                    p = x / w;
+                    p = p < 0 ? 0 : p;
+                    p = p > 1 ? 1 : p;
+                    l = p * 100;
+                    l = l < 0 ? 0 : l;
+                    l = l > 100 ? 100 : l;
+
+                    handle.style.left = l + '%';
+
+                    cb(p);
                 };
                 const up = () => {
                     document.removeEventListener('mousemove', move);
@@ -316,33 +662,50 @@ class ColorPicker{
         SetSize(sampleCanvas, ColorPicker.sampleLen, ColorPicker.sampleLen);
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
-        CommonHandle(hueCanvas, hueHandle, (v) => {
+        CommonHandle(hueCanvas, hueHandle, (p) => {
+            console.log('hueCanvas', p);
         });
-        CommonHandle(alphaCanvas, alphaHandle, (v) => {
+        CommonHandle(alphaCanvas, alphaHandle, (p) => {
+            console.log('alphaCanvas', p);
+            // set data and re-render sample, input area
+            ColorPicker.SetColor();
         });
 
         document.body.append(domWrap);
 
+        // recently usage
+        let recent = Get(domWrap, 'section-recent');
+        recent.onclick = function(event){
+            let _ele = event.target;
+
+            if(_ele.classList.contains('recent-item')){
+                ColorPicker.a;
+            }
+        };
+
         ColorPicker.onColorUpdate = onColorUpdate;
         ColorPicker.onClose = onClose;
-        ColorPicker.color = ColorPicker.ColorTransform(color);
+        ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
         ColorPicker.hsvCanvas = hsvCanvas;
         ColorPicker.sampleCanvas = sampleCanvas;
         ColorPicker.hueCanvas = hueCanvas;
         ColorPicker.hueHandle = hueHandle;
         ColorPicker.alphaCanvas = alphaCanvas;
-        ColorPicker.RenderHSV(color);
+        ColorPicker.recentDom = recent;
+        ColorPicker.RenderHSV();
         ColorPicker.RenderSample();
         ColorPicker.RenderHue();
         ColorPicker.RenderAlpha();
+        ColorPicker.RenderRecent();
     }
 
-    static RenderHSV(color = 'red'){
+    static RenderHSV(){
         let cvs = ColorPicker.hsvCanvas;
         let ctx = cvs.getContext('2d');
         let w = ColorPicker.w;
         let h = ColorPicker.HSVHeight;
 
+        console.log(ColorPicker.colorData);
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, w, h);
 
@@ -366,10 +729,6 @@ class ColorPicker{
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, Math.PI * 2, true);
         ctx.stroke();
-    }
-
-    static SetHueHandle(){
-
     }
 
     static RenderHue(){
@@ -423,37 +782,46 @@ class ColorPicker{
     static RenderSample(){
         let cvs = ColorPicker.sampleCanvas;
         let ctx = cvs.getContext('2d');
-        let w = ColorPicker.hueWidth;
-        let h = ColorPicker.alphaHeight;
-        let _l = 5;
-        let _s = ColorPicker.sampleLen;
-        let len = ColorPicker.hueWidth / _l;
+        let l = 5;
+        let w = ColorPicker.sampleLen;
+        let h = w;
+        let x = 0;
+        let y = 0;
 
         ctx.fillStyle = '#c5c5c5';
-        for(let i = 0; i < len; i++){
+        while(y * l < h){
             ctx.fillRect(
-                i * _l,
-                i % 2 === 0 ? 0 : _l,
-                _l,
-                _l
+                x * l,
+                y * l,
+                l,
+                l
             );
+
+            // new line
+            if((x + 2) * l > w){
+                y++;
+                x = y % 2 === 0 ? 0 : 1;
+            } else{
+                x += 2;
+            }
         }
+        /*
+                // left middle to right middle
+                let gradient = ctx.createLinearGradient(0, h / 2, w, h / 2);
+                gradient.addColorStop(0, 'rgba(255,255,255,0)');
+                gradient.addColorStop(1, '#b3b3b3');
 
-        // left middle to right middle
-        let gradient = ctx.createLinearGradient(0, h / 2, w, h / 2);
-        gradient.addColorStop(0, 'rgba(255,255,255,0)');
-        gradient.addColorStop(1, '#b3b3b3');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, w, h);*/
     }
 
-    static PointSection1(){
-
-    }
-
-    static ColorTransform(color){
-        return color;
+    static RenderRecent(){
+        ColorPicker.recent.map(({ r, g, b, a }) => {
+            let d = document.createElement('div');
+            d.className = 'recent-item';
+            d.setAttribute('style', `background-color:rgba(${ r },${ g },${ b },${ a })`);
+            ColorPicker.recentDom.append(d);
+        });
     }
 
     static GetColorDataByPos({ canvas, x, y, isSection1 = false }){
@@ -467,7 +835,7 @@ class ColorPicker{
             s : (x / w),
             v : (1 - y / h)
         };
-        console.log('S');
+        // console.log('S');
         let rgb = null;
         /*
                 if(isSection1){
@@ -490,10 +858,10 @@ class ColorPicker{
                 }
         */
         // console.log(data);
-        let r2 = ColorHelpers.RGBtoHSV(data[0], data[1], data[2]);
-        console.log(r1);
-        console.log(r2);
-        console.log('E');
+        let r2 = ColorHelpers.RGB2HSV(data[0], data[1], data[2]);
+        // console.log(r1);
+        // console.log(r2);
+        // console.log('E');
 
         return rgb;
     }
