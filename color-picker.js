@@ -714,6 +714,10 @@ class ColorPicker{
         hsvCanvas.onmousedown = (event) => {
             let _rect = hsvCanvas.getBoundingClientRect();
             const move = ({ x, y }) => {
+                let h;
+                let s;
+                let v;
+                let a = ColorPicker.colorData.alpha;
                 let mX = x - _rect.x;
                 let mY = y - _rect.y;
 
@@ -730,11 +734,14 @@ class ColorPicker{
                     mY = ColorPicker.HSVHeight;
                 }
 
+                h = ColorPicker.colorData.hsva.h
+                s = mX / ColorPicker.w
+                v = 1 - (mY / ColorPicker.HSVHeight)
                 ColorPicker.colorData = ColorHelpers.StandardizeColor({
-                    h : ColorPicker.colorData.hsva.h,
-                    s : x / ColorPicker.w,
-                    v : 1 - (y / ColorPicker.HSVHeight),
-                    a : ColorPicker.colorData.alpha
+                    h,
+                    s,
+                    v,
+                    a
                 });
                 // console.log(ColorPicker.colorData);
 
@@ -767,14 +774,15 @@ class ColorPicker{
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         CommonHandle(hueCanvas, hueHandle, (p) => {
-            let c = ColorHelpers.GetColorFromHUEByPercent(p);
+            // console.log(p);
+            let hsva = {
+                ...ColorPicker.colorData.hsva,
+                h : p
+            };
 
-            // console.log(c);
-            c.a = ColorPicker.colorData.alpha;
-            ColorPicker.colorData = ColorHelpers.StandardizeColor(c);
-            console.log('hueCanvas', ColorPicker.colorData);
+            ColorPicker.colorData = ColorHelpers.StandardizeColor(hsva);
 
-            ColorPicker.RenderHSV(c);
+            ColorPicker.RenderHSV();
             ColorPicker.RenderSample();
             ColorPicker.RenderHue();
             ColorPicker.RenderAlpha();
@@ -782,7 +790,16 @@ class ColorPicker{
         CommonHandle(alphaCanvas, alphaHandle, (p) => {
             console.log('alphaCanvas', p);
             // set data and re-render sample, input area
-            ColorPicker.SetColor();
+            // ColorPicker.SetColor();
+            // p =  Number(p.toFixed(2))
+            ColorPicker.colorData.alpha = p
+            ColorPicker.colorData.hexa.a = (p * 255).toString(16)
+            ColorPicker.colorData.hsla.a = p
+            ColorPicker.colorData.hsva.a = p
+            ColorPicker.colorData.rgba.a = p;
+
+            ColorPicker.RenderSample();
+            ColorPicker.RenderAlpha();
         });
 
         document.body.append(domWrap);
