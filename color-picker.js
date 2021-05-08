@@ -10,12 +10,14 @@ const ColorHelpers = {
         let hexs;
         let hueColor;
         let alpha = 1;
+        let inputType = {};
 
         if(t === '[object String]'){
             i = i.toLowerCase();
-
+            inputType.t1 = 's';
             if(/rgb/g.test(i)){
                 rgba = ColorHelpers.RGBs2RGB(i);
+                inputType.t2 = 'r';
             } else if(/#/g.test(i)){
                 // hexs = i;
                 hexa = ColorHelpers.HEXs2HEX(i);
@@ -24,11 +26,14 @@ const ColorHelpers = {
                 _f = !0;
             }
         } else if(t === '[object Object]'){
+            inputType.t1 = 'o';
+
             if(
                 !isNaN(i.r)
                 && !isNaN(i.g)
                 && !isNaN(i.b)
             ){
+                inputType.t2 = 'r';
                 rgba = { ...i };
                 hexa = ColorHelpers.RGB2HEX(rgba);
             } else if(
@@ -36,6 +41,7 @@ const ColorHelpers = {
                 && !isNaN(i.s)
                 && !isNaN(i.v)
             ){
+                inputType.t2 = 'h';
                 hsva = { ...i };
                 rgba = ColorHelpers.HSV2RGB(hsva);
             } else{
@@ -76,7 +82,8 @@ const ColorHelpers = {
             hsva,
             hsla,
             alpha,
-            hueColor
+            hueColor,
+            inputType
         };
     },
     HEX2RGB : ({ r, g, b, a = 'ff' }) => {
@@ -646,8 +653,9 @@ class ColorPicker{
         b : 0,
         a : 1
     });
+    static inputMode = null;
 
-    static Open({ x = 0, y = 0, color = 'rgba(255,0,0,1)', returnType, onColorUpdate = null, onClose = null } = {}){
+    static Open({ x = 0, y = 0, color, returnType, onColorUpdate = null, onClose = null } = {}){
         let domWrap = document.createElement('div');
         // copy
         let domMain = null;
@@ -696,7 +704,16 @@ class ColorPicker{
             return a.getElementsByClassName(s)[0];
         };
 
-        ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
+        // no input
+        if(!color){
+            if(!ColorPicker.colorData){
+                color = 'rgba(255,0,0,1)'
+                ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
+            }
+        }else{
+            ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
+        }
+
         // skeleton
         domWrap.id = 'colorPicker-' + Date.now();
         domWrap.className = 'colorPickerWrap';
@@ -735,9 +752,9 @@ class ColorPicker{
                     mY = ColorPicker.HSVHeight;
                 }
 
-                h = ColorPicker.colorData.hsva.h
-                s = mX / ColorPicker.w
-                v = 1 - (mY / ColorPicker.HSVHeight)
+                h = ColorPicker.colorData.hsva.h;
+                s = mX / ColorPicker.w;
+                v = 1 - (mY / ColorPicker.HSVHeight);
                 ColorPicker.colorData = ColorHelpers.StandardizeColor({
                     h,
                     s,
@@ -795,16 +812,25 @@ class ColorPicker{
             // set data and re-render sample, input area
             // ColorPicker.SetColor();
             // p =  Number(p.toFixed(2))
-            ColorPicker.colorData.alpha = p
-            ColorPicker.colorData.hexa.a = (p * 255).toString(16)
-            ColorPicker.colorData.hsla.a = p
-            ColorPicker.colorData.hsva.a = p
+            ColorPicker.colorData.alpha = p;
+            ColorPicker.colorData.hexa.a = (p * 255).toString(16);
+            ColorPicker.colorData.hsla.a = p;
+            ColorPicker.colorData.hsva.a = p;
             ColorPicker.colorData.rgba.a = p;
 
             ColorPicker.RenderSample();
             ColorPicker.RenderAlpha();
         });
 
+        // User input area
+        let hexDom = Get(domWrap, 'mode-hex');
+        let rgbaDom = Get(domWrap, 'mode-rgba');
+        let hsvDom = Get(domWrap, 'mode-hsva');
+
+        if(color.indexOf('#')){
+
+        }
+        // hexDom.onkeyup
         document.body.append(domWrap);
 
         // recently usage
@@ -953,9 +979,8 @@ class ColorPicker{
         ctx.fillStyle = ColorPicker.colorData.hexs;
         ctx.fillRect(0, 0, w, h);
 
-
         // contrast circle
-        if(ColorPicker.colorData.hsva.s<0.05 && ColorPicker.colorData.hsva.v > 0.95){
+        if(ColorPicker.colorData.hsva.s < 0.05 && ColorPicker.colorData.hsva.v > 0.95){
             ctx.strokeStyle = '#d8d8d8';
             // ctx.strokeStyle = '#ff0000';
             ctx.beginPath();
@@ -964,6 +989,10 @@ class ColorPicker{
         }
 
         ctx.restore();
+    }
+
+    static RenderInput(){
+
     }
 
     static RenderRecent(){
