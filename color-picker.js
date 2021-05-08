@@ -7,11 +7,17 @@ const ColorHelpers = {
         let hexa;
         let hsva;
         let hsla;
+        let hexs;
+        let hueColor;
+        let alpha = 1;
 
         if(t === '[object String]'){
+            i = i.toLowerCase();
+
             if(/rgb/g.test(i)){
                 rgba = ColorHelpers.RGBs2RGB(i);
             } else if(/#/g.test(i)){
+                // hexs = i;
                 hexa = ColorHelpers.HEXs2HEX(i);
                 rgba = ColorHelpers.HEX2RGB(hexa);
             } else{
@@ -55,17 +61,22 @@ const ColorHelpers = {
         if(!hsla){
             hsla = ColorHelpers.HSV2HSL(hsva);
         }
-        // if(Object)
-        /*  if(i.test(/rgb/g)){
 
-          }*/
+        if(!hexs){
+            hexs = `#${ hexa.r }${ hexa.g }${ hexa.b }`;
+        }
+
+        hueColor = ColorHelpers.GetColorFromHUEByPercent(1 - hsva.h);
+        alpha = rgba.a;
 
         return {
             rgba,
             hexa,
+            hexs,
             hsva,
             hsla,
-            hueColor : ColorHelpers.GetColorFromHUEByPercent(1 - hsva.h)
+            alpha,
+            hueColor
         };
     },
     HEX2RGB : ({ r, g, b, a = 'ff' }) => {
@@ -73,7 +84,7 @@ const ColorHelpers = {
             r : parseInt(r, 16),
             g : parseInt(g, 16),
             b : parseInt(b, 16),
-            a : parseInt(a, 16)
+            a : parseInt(a, 16) / 255
         };
     },
     HEXs2HEX : (s) => {
@@ -86,7 +97,7 @@ const ColorHelpers = {
             b : s.substr(5, 2)
         };
 
-        if(isNaN(s.substr(7, 2))){
+        if(s.substr(7, 2)){
             hexa.a = s.substr(7, 2);
         } else{
             hexa.a = 'ff';
@@ -106,15 +117,25 @@ const ColorHelpers = {
             r : Number(s[0]),
             g : Number(s[1]),
             b : Number(s[2]),
-            a : Number(s[3]) || 255
+            a : Number(s[3]) || 1
         };
     },
-    RGB2HEX : ({ r, g, b, a = 255 }) => {
+    RGB2HEX : ({ r, g, b, a = 1 }) => {
+        r = r.toString(16);
+        g = g.toString(16);
+        b = b.toString(16);
+        a = (a * 255).toString(16);
+
+        r = r.length === 1 ? '0' + r : r;
+        g = g.length === 1 ? '0' + g : g;
+        b = b.length === 1 ? '0' + b : b;
+        a = a.length === 1 ? '0' + a : a;
+
         return {
-            r : r.toString(16),
-            g : g.toString(16),
-            b : b.toString(16),
-            a : r.toString(16)
+            r,
+            g,
+            b,
+            a
         };
     },
     RGB2HSV : ({ r, g, b, a = 1 }) => {
@@ -149,7 +170,7 @@ const ColorHelpers = {
             a
         };
     },
-    HSV2RGB : ({ h, s, v }) => {
+    HSV2RGB : ({ h, s, v, a = 1 }) => {
         var r, g, b, i, f, p, q, t;
 
         i = Math.floor(h * 6);
@@ -180,14 +201,16 @@ const ColorHelpers = {
         return {
             r : Math.round(r * 255),
             g : Math.round(g * 255),
-            b : Math.round(b * 255)
+            b : Math.round(b * 255),
+            a
         };
     },
-    HSV2HSL : ({ h, s, v }) => {
+    HSV2HSL : ({ h, s, v, a = 1 }) => {
         return {
             h,
             s : (s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h)) || 0,
-            l : h / 2
+            l : h / 2,
+            a
         };
     },
     HSL2HSV : (h, s, l, a = 1) => {
@@ -710,23 +733,17 @@ class ColorPicker{
                 ColorPicker.colorData = ColorHelpers.StandardizeColor({
                     h : ColorPicker.colorData.hsva.h,
                     s : x / ColorPicker.w,
-                    v : 1 - (y / ColorPicker.HSVHeight)
+                    v : 1 - (y / ColorPicker.HSVHeight),
+                    a : ColorPicker.colorData.alpha
                 });
-                console.log(ColorPicker.colorData);
-                // get color
-                /* ColorPicker.color = */
-                ColorPicker.GetColorDataByPos({
-                    canvas : hsvCanvas,
-                    x : mX,
-                    y : mY,
-                    isSection1 : true
-                });
+                // console.log(ColorPicker.colorData);
 
                 ColorPicker.HSVPos = {
                     x : mX,
                     y : mY
                 };
-                ColorPicker.RenderHSV(ColorPicker.colorData.hueColor);
+                ColorPicker.RenderHSV();
+                ColorPicker.RenderSample();
             };
             const up = () => {
                 document.removeEventListener('mousemove', move);
@@ -751,13 +768,16 @@ class ColorPicker{
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         CommonHandle(hueCanvas, hueHandle, (p) => {
             let c = ColorHelpers.GetColorFromHUEByPercent(p);
-            console.log(c);
+
+            // console.log(c);
+            c.a = ColorPicker.colorData.alpha;
             ColorPicker.colorData = ColorHelpers.StandardizeColor(c);
+            console.log('hueCanvas', ColorPicker.colorData);
+
             ColorPicker.RenderHSV(c);
             ColorPicker.RenderSample();
             ColorPicker.RenderHue();
             ColorPicker.RenderAlpha();
-            // console.log('hueCanvas', ColorPicker.colorData.hsva);
         });
         CommonHandle(alphaCanvas, alphaHandle, (p) => {
             console.log('alphaCanvas', p);
@@ -797,10 +817,6 @@ class ColorPicker{
         ColorPicker.RenderHue();
         ColorPicker.RenderAlpha();
         ColorPicker.RenderRecent();
-    }
-
-    static UpdateHSVPos(s, v){
-        // return
     }
 
     static RenderHSV(color){
@@ -864,6 +880,7 @@ class ColorPicker{
         let _l = 5;
         let len = ColorPicker.hueWidth / _l;
 
+        ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = '#c5c5c5';
         for(let i = 0; i < len; i++){
             ctx.fillRect(
@@ -892,6 +909,8 @@ class ColorPicker{
         let x = 0;
         let y = 0;
 
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
         ctx.fillStyle = '#c5c5c5';
         while(y * l < h){
             ctx.fillRect(
@@ -909,14 +928,12 @@ class ColorPicker{
                 x += 2;
             }
         }
-        /*
-                // left middle to right middle
-                let gradient = ctx.createLinearGradient(0, h / 2, w, h / 2);
-                gradient.addColorStop(0, 'rgba(255,255,255,0)');
-                gradient.addColorStop(1, '#b3b3b3');
 
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, w, h);*/
+        // debugger
+        ctx.globalAlpha = ColorPicker.colorData.alpha;
+        ctx.fillStyle = ColorPicker.colorData.hexs;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
     }
 
     static RenderRecent(){
@@ -926,48 +943,6 @@ class ColorPicker{
             d.setAttribute('style', `background-color:rgba(${ r },${ g },${ b },${ a })`);
             ColorPicker.recentDom.append(d);
         });
-    }
-
-    static GetColorDataByPos({ canvas, x, y, isSection1 = false }){
-        let ctx = canvas.getContext('2d');
-        let w = ColorPicker.w;
-        let h = ColorPicker.HSVHeight;
-        let data = ctx.getImageData(x, y, 1, 1).data;
-
-        let r1 = {
-            h : 0,
-            s : (x / w),
-            v : (1 - y / h)
-        };
-        // console.log('S');
-        let rgb = null;
-        /*
-                if(isSection1){
-                    if(y === 0){
-                        if(x === 0){
-                            // top left corner
-                            rgb = {
-                                r : 255,
-                                g : 255,
-                                b : 255
-                            };
-                        } else if(x === canvas.width){
-                            rgb = {
-                                r : 255,
-                                g : 255,
-                                b : 255
-                            };
-                        }
-                    }
-                }
-        */
-        // console.log(data);
-        let r2 = ColorHelpers.RGB2HSV(data[0], data[1], data[2]);
-        // console.log(r1);
-        // console.log(r2);
-        // console.log('E');
-
-        return rgb;
     }
 
     static Close(){
