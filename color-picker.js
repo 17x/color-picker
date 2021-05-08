@@ -18,9 +18,20 @@ const ColorHelpers = {
                 _f = !0;
             }
         } else if(t === '[object Object]'){
-            if(!(i.r && i.g && i.b)){
+            if(
+                !isNaN(i.r)
+                && !isNaN(i.g)
+                && !isNaN(i.b)
+            ){
                 rgba = { ...i };
                 hexa = ColorHelpers.RGB2HEX(rgba);
+            } else if(
+                !isNaN(i.h)
+                && !isNaN(i.s)
+                && !isNaN(i.v)
+            ){
+                hsva = { ...i };
+                rgba = ColorHelpers.HSV2RGB(hsva);
             } else{
                 _f = !0;
             }
@@ -37,8 +48,13 @@ const ColorHelpers = {
             hexa = ColorHelpers.RGB2HEX(rgba);
         }
 
-        hsva = ColorHelpers.RGB2HSV(rgba);
-        hsla = ColorHelpers.HSV2HSL(hsva);
+        if(!hsva){
+            hsva = ColorHelpers.RGB2HSV(rgba);
+        }
+
+        if(!hsla){
+            hsla = ColorHelpers.HSV2HSL(hsva);
+        }
         // if(Object)
         /*  if(i.test(/rgb/g)){
 
@@ -207,9 +223,7 @@ const ColorHelpers = {
                 newRgb = { ...next.o };
             } else if(d < next.d){
                 let curr = ColorHelpers.HUE_Data[i];
-                newRgb = {
-                    // ...curr.o
-                };
+                newRgb = {};
 
                 Object.keys(curr.o)
                       .map(k => {
@@ -219,10 +233,10 @@ const ColorHelpers = {
 
                           if(a < b){
                               // incre
-                              newRgb[k] = p2 * 255;
+                              newRgb[k] = Math.round(p2 * 255);
                           } else if(a > b){
                               // decre
-                              newRgb[k] = (1 - p2) * 255;
+                              newRgb[k] = Math.round((1 - p2) * 255);
                           } else{
                               newRgb[k] = a;
                           }
@@ -602,32 +616,7 @@ class ColorPicker{
     static hueWidth = 150;
     static hueHeight = 10;
     static alphaHeight = 10;
-    static colorData = {
-        rgba : {
-            r : 255,
-            g : 255,
-            b : 255,
-            a : 1
-        },
-        hexa : {
-            r : 'ff',
-            g : 'ff',
-            b : 'ff',
-            a : 'ff'
-        },
-        hsva : {
-            r : 'ff',
-            g : 'ff',
-            b : 'ff',
-            a : 'ff'
-        },
-        hsla : {
-            r : 'ff',
-            g : 'ff',
-            b : 'ff',
-            a : 'ff'
-        }
-    };
+    static colorData = null;
     static recent = new Array(27).fill({
         r : 255,
         g : 0,
@@ -637,7 +626,6 @@ class ColorPicker{
 
     static Open({ x = 0, y = 0, color = 'rgba(255,0,0,1)', returnType, onColorUpdate = null, onClose = null } = {}){
         let domWrap = document.createElement('div');
-        // hexa
         // copy
         let domMain = null;
         const DisabledSelection = (event) => {
@@ -702,7 +690,7 @@ class ColorPicker{
         // event entrance
         hsvCanvas.onmousedown = (event) => {
             let _rect = hsvCanvas.getBoundingClientRect();
-            const HandleMove = ({ x, y }) => {
+            const move = ({ x, y }) => {
                 let mX = x - _rect.x;
                 let mY = y - _rect.y;
 
@@ -713,12 +701,18 @@ class ColorPicker{
                     mY = 0;
                 }
                 if(mX >= ColorPicker.w){
-                    mX = ColorPicker.w - 1;
+                    mX = ColorPicker.w;
                 }
                 if(mY >= ColorPicker.HSVHeight){
-                    mY = ColorPicker.HSVHeight - 1;
+                    mY = ColorPicker.HSVHeight;
                 }
 
+                ColorPicker.colorData = ColorHelpers.StandardizeColor({
+                    h : ColorPicker.colorData.hsva.h,
+                    s : x / ColorPicker.w,
+                    v : 1 - (y / ColorPicker.HSVHeight)
+                });
+                console.log(ColorPicker.colorData);
                 // get color
                 /* ColorPicker.color = */
                 ColorPicker.GetColorDataByPos({
@@ -732,17 +726,17 @@ class ColorPicker{
                     x : mX,
                     y : mY
                 };
-                ColorPicker.RenderHSV(ColorPicker.color);
+                ColorPicker.RenderHSV(ColorPicker.colorData.hueColor);
             };
-            const HandleUp = () => {
-                document.removeEventListener('mousemove', HandleMove);
-                document.removeEventListener('mouseup', HandleUp);
+            const up = () => {
+                document.removeEventListener('mousemove', move);
+                document.removeEventListener('mouseup', up);
             };
-            document.addEventListener('mousemove', HandleMove);
+            document.addEventListener('mousemove', move);
             document.addEventListener('selectstart', DisabledSelection);
-            document.addEventListener('mouseup', HandleUp);
+            document.addEventListener('mouseup', up);
 
-            HandleMove(event);
+            move(event);
         };
 
         // section2
@@ -756,8 +750,8 @@ class ColorPicker{
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         CommonHandle(hueCanvas, hueHandle, (p) => {
-            // console.log(p);
             let c = ColorHelpers.GetColorFromHUEByPercent(p);
+            console.log(c);
             ColorPicker.colorData = ColorHelpers.StandardizeColor(c);
             ColorPicker.RenderHSV(c);
             ColorPicker.RenderSample();
