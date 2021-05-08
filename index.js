@@ -4,6 +4,6 @@ function Onload(){
     ColorPicker.Open({
         x : 5,
         y : 20,
-        color:'rgba(0,0,255,1)'
+        color:'rgb(103,239,154)'
     });
 }

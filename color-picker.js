@@ -1,5 +1,6 @@
 const ColorHelpers = {
     StandardizeColor : (i) => {
+        console.log(i);
         let _f = false;
         let t = Object.prototype.toString.call(i);
         let rgba;
@@ -14,25 +15,30 @@ const ColorHelpers = {
                 hexa = ColorHelpers.HEXs2HEX(i);
                 rgba = ColorHelpers.HEX2RGB(hexa);
             } else{
-                _f = !0
+                _f = !0;
             }
         } else if(t === '[object Object]'){
-            if(t.r && t.g && t.b){
-                rgba = { ...t };
+            if(!(i.r && i.g && i.b)){
+                rgba = { ...i };
                 hexa = ColorHelpers.RGB2HEX(rgba);
             } else{
-                _f = !0
+                _f = !0;
             }
         } else{
-            _f = !0
+            _f = !0;
         }
 
         if(_f){
+            // debugger
             throw new Error('Input type error');
         }
 
-        hsva = ColorHelpers.RGB2HSV(rgba)
-        hsla = ColorHelpers.RGB2HSV(hsva)
+        if(!hexa){
+            hexa = ColorHelpers.RGB2HEX(rgba);
+        }
+
+        hsva = ColorHelpers.RGB2HSV(rgba);
+        hsla = ColorHelpers.HSV2HSL(hsva);
         // if(Object)
         /*  if(i.test(/rgb/g)){
 
@@ -167,21 +173,54 @@ const ColorHelpers = {
             l : h / 2
         };
     },
-    HSL2HSV : (h, s, l, a=1) => {
-        let _s
-        let _v
+    HSL2HSV : (h, s, l, a = 1) => {
+        let _s;
+        let _v;
 
-        l *= 2
-        s *= (l <= 1) ? l : 2 - l
-        _v = (l + s) / 2
-        _s = (2 * s) / (l + s)
+        l *= 2;
+        s *= (l <= 1) ? l : 2 - l;
+        _v = (l + s) / 2;
+        _s = (2 * s) / (l + s);
 
         return {
             h,
-            s: _s,
-            v: _v,
+            s : _s,
+            v : _v,
             a
+        };
+    },
+    GetColorFromHUEByPercent : (p) => {
+        p = 1 - p;
+        if(p <= 0 || p === 1){
+           return { ...ColorHelpers.HUE_Data[0].o };
         }
+
+        let newRgb
+        let d = p * 360;
+        d = Number(d.toFixed(2));
+
+        for(let i = 0; i < ColorHelpers.HUE_Data.length; i++){
+            let next = ColorHelpers.HUE_Data[i + 1];
+            // if(!next)debugger
+            if(d === next.d){
+                newRgb = { ...next.o }
+            }else if(d < next.d){
+                let curr = ColorHelpers.HUE_Data[i];
+                newRgb = {
+                    ...curr.o
+                }
+
+                // debugger
+                newRgb.r = Math.abs(curr.o.r - next.o.r) * p;
+                newRgb.g = Math.abs(curr.o.g - next.o.g) * p
+                newRgb.b = Math.abs(curr.o.b - next.o.b) * p
+
+                // console.log(newRgb);
+                break;
+            }
+        }
+
+        return newRgb
     },
     HUE_Data : [
         /*
@@ -193,28 +232,67 @@ const ColorHelpers = {
         Magenta R 255 B 255 300
         */
         {
+            o : {
+                r : 255,
+                g : 0,
+                b : 0
+            },
             n : 'rgb(255,0,0)',
             d : 0
         },
         {
+            o : {
+                r : 255,
+                g : 0,
+                b : 255
+            },
             n : 'rgb(255,0,255)',
             d : 60
         },
         {
+            o : {
+                r : 0,
+                g : 0,
+                b : 255
+            },
             n : 'rgb(0,0,255)',
             d : 120
         },
         {
+            o : {
+                r : 0,
+                g : 255,
+                b : 255
+            },
             n : 'rgb(0,255,255)',
             d : 180
         },
         {
+            o : {
+                r : 0,
+                g : 255,
+                b : 0
+            },
             n : 'rgb(0,255,0)',
             d : 240
         },
         {
+            o : {
+                r : 255,
+                g : 255,
+                b : 0
+            },
             n : 'rgb(255,255,0)',
             d : 300
+        },
+        {
+            o : {
+                r : 255,
+                g : 0,
+                b : 0
+            },
+            n : 'rgb(255,0,0)',
+            d : 360
         }
     ]
 };
@@ -663,7 +741,14 @@ class ColorPicker{
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         CommonHandle(hueCanvas, hueHandle, (p) => {
-            console.log('hueCanvas', p);
+            console.log(p);
+            let c = ColorHelpers.GetColorFromHUEByPercent(p)
+            ColorPicker.colorData =  ColorHelpers.StandardizeColor(c)
+            ColorPicker.RenderHSV();
+            ColorPicker.RenderSample();
+            ColorPicker.RenderHue();
+            ColorPicker.RenderAlpha();
+            console.log('hueCanvas', p,c);
         });
         CommonHandle(alphaCanvas, alphaHandle, (p) => {
             console.log('alphaCanvas', p);
@@ -706,7 +791,9 @@ class ColorPicker{
         let h = ColorPicker.HSVHeight;
 
         console.log(ColorPicker.colorData);
-        ctx.fillStyle = color;
+        let hueColor = ColorHelpers.GetColorFromHUEByPercent(ColorPicker.colorData.hsva.h)
+        console.log(hueColor);
+        ctx.fillStyle = `rgb(${hueColor.r},${hueColor.g},${hueColor.b})`;
         ctx.fillRect(0, 0, w, h);
 
         // left middle to right middle
@@ -743,9 +830,6 @@ class ColorPicker{
 
         for(let i = 0; i < len; i++){
             gradient.addColorStop(cData[i].d / 360, cData[i].n);
-            if(i === len - 2){
-                gradient.addColorStop(1, cData[0].n);
-            }
         }
 
         ctx.fillStyle = gradient;
