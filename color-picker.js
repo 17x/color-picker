@@ -696,6 +696,7 @@ class ColorPicker{
             return a.getElementsByClassName(s)[0];
         };
 
+        ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
         // skeleton
         domWrap.id = 'colorPicker-' + Date.now();
         domWrap.className = 'colorPickerWrap';
@@ -770,6 +771,8 @@ class ColorPicker{
         let alphaCanvas = Get(domWrap, 'alphaCanvas');
         let alphaHandle = Get(domWrap, 'alphaHandle');
 
+        hueHandle.style.left = (1 - ColorPicker.colorData.hsva.h) * 100 + '%';
+        alphaHandle.style.left = ColorPicker.colorData.alpha * 100 + '%';
         SetSize(sampleCanvas, ColorPicker.sampleLen, ColorPicker.sampleLen);
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
@@ -816,12 +819,11 @@ class ColorPicker{
 
         ColorPicker.onColorUpdate = onColorUpdate;
         ColorPicker.onClose = onClose;
-        ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
         ColorPicker.HSVPos = {
             x : ColorPicker.colorData.hsva.s * ColorPicker.w,
             y : (1 - ColorPicker.colorData.hsva.v) * ColorPicker.HSVHeight
         };
-        console.log(ColorPicker.colorData, ColorPicker.HSVPos);
+        // console.log(ColorPicker.colorData, ColorPicker.HSVPos);
 
         ColorPicker.hsvCanvas = hsvCanvas;
         ColorPicker.sampleCanvas = sampleCanvas;
@@ -950,6 +952,17 @@ class ColorPicker{
         ctx.globalAlpha = ColorPicker.colorData.alpha;
         ctx.fillStyle = ColorPicker.colorData.hexs;
         ctx.fillRect(0, 0, w, h);
+
+
+        // contrast circle
+        if(ColorPicker.colorData.hsva.s<0.05 && ColorPicker.colorData.hsva.v > 0.95){
+            ctx.strokeStyle = '#d8d8d8';
+            // ctx.strokeStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2, true);
+            ctx.stroke();
+        }
+
         ctx.restore();
     }
 
