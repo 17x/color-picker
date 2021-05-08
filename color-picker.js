@@ -1,6 +1,6 @@
 const ColorHelpers = {
     StandardizeColor : (i) => {
-        console.log(i);
+        // console.log(i);
         let _f = false;
         let t = Object.prototype.toString.call(i);
         let rgba;
@@ -48,7 +48,8 @@ const ColorHelpers = {
             rgba,
             hexa,
             hsva,
-            hsla
+            hsla,
+            hueColor : ColorHelpers.GetColorFromHUEByPercent(1 - hsva.h)
         };
     },
     HEX2RGB : ({ r, g, b, a = 'ff' }) => {
@@ -190,37 +191,51 @@ const ColorHelpers = {
         };
     },
     GetColorFromHUEByPercent : (p) => {
-        p = 1 - p;
-        if(p <= 0 || p === 1){
-           return { ...ColorHelpers.HUE_Data[0].o };
+        // console.log('input p', p);
+        if(p === 0 || p === 1){
+            return { ...ColorHelpers.HUE_Data[0].o };
         }
 
-        let newRgb
+        let newRgb;
+        // let d = Number((p * 360).toFixed(2));
         let d = p * 360;
-        d = Number(d.toFixed(2));
 
         for(let i = 0; i < ColorHelpers.HUE_Data.length; i++){
             let next = ColorHelpers.HUE_Data[i + 1];
-            // if(!next)debugger
+
             if(d === next.d){
-                newRgb = { ...next.o }
-            }else if(d < next.d){
+                newRgb = { ...next.o };
+            } else if(d < next.d){
                 let curr = ColorHelpers.HUE_Data[i];
                 newRgb = {
-                    ...curr.o
-                }
+                    // ...curr.o
+                };
 
-                // debugger
-                newRgb.r = Math.abs(curr.o.r - next.o.r) * p;
-                newRgb.g = Math.abs(curr.o.g - next.o.g) * p
-                newRgb.b = Math.abs(curr.o.b - next.o.b) * p
+                Object.keys(curr.o)
+                      .map(k => {
+                          let a = curr.o[k];
+                          let b = next.o[k];
+                          let p2 = (d - curr.d) / 60;
 
-                // console.log(newRgb);
+                          if(a < b){
+                              // incre
+                              newRgb[k] = p2 * 255;
+                          } else if(a > b){
+                              // decre
+                              newRgb[k] = (1 - p2) * 255;
+                          } else{
+                              newRgb[k] = a;
+                          }
+                      });
+
                 break;
             }
         }
 
-        return newRgb
+        return newRgb;
+    },
+    HSV2Pos : ({ s, v }) => {
+
     },
     HUE_Data : [
         /*
@@ -741,14 +756,14 @@ class ColorPicker{
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         CommonHandle(hueCanvas, hueHandle, (p) => {
-            console.log(p);
-            let c = ColorHelpers.GetColorFromHUEByPercent(p)
-            ColorPicker.colorData =  ColorHelpers.StandardizeColor(c)
-            ColorPicker.RenderHSV();
+            // console.log(p);
+            let c = ColorHelpers.GetColorFromHUEByPercent(p);
+            ColorPicker.colorData = ColorHelpers.StandardizeColor(c);
+            ColorPicker.RenderHSV(c);
             ColorPicker.RenderSample();
             ColorPicker.RenderHue();
             ColorPicker.RenderAlpha();
-            console.log('hueCanvas', p,c);
+            // console.log('hueCanvas', ColorPicker.colorData.hsva);
         });
         CommonHandle(alphaCanvas, alphaHandle, (p) => {
             console.log('alphaCanvas', p);
@@ -771,6 +786,12 @@ class ColorPicker{
         ColorPicker.onColorUpdate = onColorUpdate;
         ColorPicker.onClose = onClose;
         ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
+        ColorPicker.HSVPos = {
+            x : ColorPicker.colorData.hsva.s * ColorPicker.w,
+            y : (1 - ColorPicker.colorData.hsva.v) * ColorPicker.HSVHeight
+        };
+        console.log(ColorPicker.colorData, ColorPicker.HSVPos);
+
         ColorPicker.hsvCanvas = hsvCanvas;
         ColorPicker.sampleCanvas = sampleCanvas;
         ColorPicker.hueCanvas = hueCanvas;
@@ -784,16 +805,21 @@ class ColorPicker{
         ColorPicker.RenderRecent();
     }
 
-    static RenderHSV(){
+    static UpdateHSVPos(s, v){
+        // return
+    }
+
+    static RenderHSV(color){
         let cvs = ColorPicker.hsvCanvas;
         let ctx = cvs.getContext('2d');
         let w = ColorPicker.w;
         let h = ColorPicker.HSVHeight;
 
-        console.log(ColorPicker.colorData);
-        let hueColor = ColorHelpers.GetColorFromHUEByPercent(ColorPicker.colorData.hsva.h)
-        console.log(hueColor);
-        ctx.fillStyle = `rgb(${hueColor.r},${hueColor.g},${hueColor.b})`;
+        if(!color){
+            color = ColorPicker.colorData.hueColor;
+        }
+
+        ctx.fillStyle = `rgb(${ color.r },${ color.g },${ color.b })`;
         ctx.fillRect(0, 0, w, h);
 
         // left middle to right middle
