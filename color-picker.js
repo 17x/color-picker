@@ -9,7 +9,7 @@ const ColorHelpers = {
         let hsla;
         let hexs;
         let hueColor;
-        let alpha = 1;
+        let alpha;
         let inputType = {};
 
         if(t === '[object String]'){
@@ -27,6 +27,12 @@ const ColorHelpers = {
             }
         } else if(t === '[object Object]'){
             inputType.t1 = 'o';
+            // copy
+            i = { ...i };
+
+            if(isNaN(i.a)){
+                i.a = 1;
+            }
 
             if(
                 !isNaN(i.r)
@@ -706,11 +712,12 @@ class ColorPicker{
 
         // no input
         if(!color){
+            // no last
             if(!ColorPicker.colorData){
-                color = 'rgba(255,0,0,1)'
+                color = 'rgba(255,0,0,1)';
                 ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
             }
-        }else{
+        } else{
             ColorPicker.colorData = ColorHelpers.StandardizeColor(color);
         }
 
@@ -797,7 +804,7 @@ class ColorPicker{
             // console.log(p);
             let hsva = {
                 ...ColorPicker.colorData.hsva,
-                h : p
+                h : 1 - p
             };
 
             ColorPicker.colorData = ColorHelpers.StandardizeColor(hsva);
@@ -827,9 +834,21 @@ class ColorPicker{
         let rgbaDom = Get(domWrap, 'mode-rgba');
         let hsvDom = Get(domWrap, 'mode-hsva');
 
-        if(color.indexOf('#')){
+        console.log(hexDom, rgbaDom, hsvDom);
 
+        if(Object.prototype.toString.call(color) === '[object String]'){
+            console.log('string');
+            if(color.indexOf('#')){
+
+            }else if(color.indexOf('rgb')){
+
+            }else{
+
+            }
+        }else if(Object.prototype.toString.call(color) === '[object Object]'){
+            console.log('object');
         }
+
         // hexDom.onkeyup
         document.body.append(domWrap);
 
