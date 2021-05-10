@@ -1071,12 +1071,16 @@ class ColorPicker{
 
         // hsv
         let arr2 = [...ColorPicker.modeDomMap['hsv'].getElementsByTagName('input')];
-        arr2[0].value = Math.floor((1 - hsva.h) * 360);
+        let hValue = Math.floor((hsva.h % 360) * 360)
+
+        if(hValue === 360){
+            hValue = 0;
+        }
+        arr2[0].value = hValue;
         arr2[1].value = Math.floor(hsva.s * 100) + '%';
         arr2[2].value = Math.floor(hsva.v * 100) + '%';
         arr2[3].value = hsva.a;
 
-        console.log(arr2);
         // hex
         let arr3 = [...ColorPicker.modeDomMap['hex'].getElementsByTagName('input')];
         let v = hexs;
