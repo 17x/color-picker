@@ -37,7 +37,6 @@ function Onload(){
             color : div1.dataset.color,
             close : 'hsv',
             onClose : (value) => {
-                console.log(value);
                 div1.dataset.color = value.hexs;
                 div1.style.backgroundColor = value.hexs;
             }
@@ -52,7 +51,6 @@ function Onload(){
             color : div2.dataset.color,
             close : 'enter',
             onClose : (value) => {
-                console.log(value);
                 div2.dataset.color = value.hexs;
                 div2.style.backgroundColor = value.hexs;
             }
@@ -67,7 +65,6 @@ function Onload(){
             color : div3.dataset.color,
             close : 'backdrop',
             onColorUpdate : (value) => {
-                console.log(value);
                 div3.dataset.color = value.hexs;
                 div3.style.backgroundColor = value.hexs;
             }

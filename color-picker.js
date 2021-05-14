@@ -644,7 +644,7 @@ class ColorPicker{
         }
         </style>
         <div class="backdrop"></div>
-        <div class="main bottom top">
+        <div class="main">
             <div class="hsvWrap">
                 <canvas class="hsvCanvas"></canvas>
             </div>
@@ -810,6 +810,16 @@ class ColorPicker{
         domMain.classList.add('top');
         domMain.style.width = ColorPicker.w + 'px';
         domMain.style.height = ColorPicker.h + 'px';
+
+        x -= 12;
+        domMain.classList.remove('top', 'bottom');
+        if((y + 320 + 9) > window.innerHeight){
+            y -= 320 + 9;
+            domMain.classList.add('bottom');
+        } else{
+            y += 9;
+            domMain.classList.add('top');
+        }
         domMain.style.left = x + 'px';
         domMain.style.top = y + 'px';
 
@@ -849,7 +859,7 @@ class ColorPicker{
                     v,
                     a
                 });
-                ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData)
+                ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData);
                 // console.log(ColorPicker.colorData);
 
                 ColorPicker.HSVPos = {
@@ -893,7 +903,7 @@ class ColorPicker{
             };
 
             ColorPicker.colorData = ColorHelpers.StandardizeColor(hsva);
-            ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData)
+            ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData);
             ColorPicker.RenderHSV();
             ColorPicker.RenderSample();
             ColorPicker.RenderHue();
@@ -980,7 +990,7 @@ class ColorPicker{
             console.log(result);
             if(result){
                 ColorPicker.colorData = result;
-                ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData)
+                ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData);
                 ColorPicker.CalcHSVPos();
                 ColorPicker.RenderHSV();
                 ColorPicker.RenderSample();
@@ -1253,6 +1263,6 @@ class ColorPicker{
         }
 
         ColorPicker.onClose = null;
-        ColorPicker.domWrap.remove()
+        ColorPicker.domWrap.remove();
     }
 }
