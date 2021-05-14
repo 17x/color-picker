@@ -190,7 +190,7 @@ const ColorHelpers = {
         r = r.toString(16);
         g = g.toString(16);
         b = b.toString(16);
-        a = (a * 255).toString(16);
+        a = Math.round(a * 255).toString(16);
 
         r = r.length === 1 ? '0' + r : r;
         g = g.length === 1 ? '0' + g : g;
@@ -930,7 +930,7 @@ class ColorPicker{
             } else if(t === 'hsv'){
                 let h = (Number(inputs[0].value) / 360);
                 if(h === 360){
-                    h = 0
+                    h = 0;
                 }
                 c = {
                     h : h,
@@ -941,8 +941,6 @@ class ColorPicker{
             } else{
                 return;
             }
-
-            console.log(t, c);
 
             result = ColorHelpers.ValidateColor(c);
 
@@ -969,6 +967,7 @@ class ColorPicker{
         ColorPicker.modeDomMap = modeDomMap;
         ColorPicker.inputMode = ColorPicker.colorData.inputType.t2;
         modeSwitch.onclick = () => {
+            ColorPicker.RenderInput();
             if(ColorPicker.inputMode === 'rgb'){
                 SetInputMode('hsv');
             } else if(ColorPicker.inputMode === 'hsv'){
@@ -1165,7 +1164,7 @@ class ColorPicker{
         arr1[0].value = rgba.r;
         arr1[1].value = rgba.g;
         arr1[2].value = rgba.b;
-        arr1[3].value = rgba.a;
+        arr1[3].value = Number(rgba.a.toFixed(2));
 
         // hsv
         let arr2 = [...ColorPicker.modeDomMap['hsv'].getElementsByTagName('input')];
@@ -1177,7 +1176,7 @@ class ColorPicker{
         arr2[0].value = hValue;
         arr2[1].value = Math.floor(hsva.s * 100) + '%';
         arr2[2].value = Math.floor(hsva.v * 100) + '%';
-        arr2[3].value = hsva.a;
+        arr2[3].value = Number(hsva.a.toFixed(2));
 
         // hex
         let arr3 = [...ColorPicker.modeDomMap['hex'].getElementsByTagName('input')];
