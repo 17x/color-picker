@@ -1,3 +1,21 @@
+/*
+*
+* Supported input
+*
+* String
+*** rgb String 'rgb(R,G,B)'
+*** rgba String 'rgb(R,G,B,A)'
+*** hexa String '#f00' | '#f00f' | '#ff0000' | '#ff0000ff'
+* Object
+*** rgb : {r,g,b}
+*** rgba : {r,g,b,a}
+*** hex : {r:R_Hex, g:G_Hex, b:B_Hex}
+*** hexa :{r:R_Hex, g:G_Hex, b:B_Hex, a:A_Hex}
+*** hsv :{h[0-1], s[0-1], v:[0-1]}
+*** hsva :{h[0-1], s[0-1], v:[0-1], a[0-1]
+*
+*/
+
 const ColorHelpers = {
     ValidateColor : (i) => {
         let R = ColorHelpers.StandardizeColor(i);
@@ -190,7 +208,8 @@ const ColorHelpers = {
         r = r.toString(16);
         g = g.toString(16);
         b = b.toString(16);
-        a = Math.round(a * 255).toString(16);
+        a = Math.round(a * 255)
+                .toString(16);
 
         r = r.length === 1 ? '0' + r : r;
         g = g.length === 1 ? '0' + g : g;
@@ -419,7 +438,7 @@ class ColorPicker{
     static domString = `
         <style>        
         .colorPickerWrap {
-            position: absolute;
+            position: fixed;
             width: 100%;
             height: 100%;
             top: 0;
@@ -714,7 +733,16 @@ class ColorPicker{
     });
     static inputMode = null;
 
-    static Open({ x = 0, y = 0, color, returnType, onColorUpdate = null, onClose = null } = {}){
+    static Open({
+        x = 0,
+        y = 0,
+        // refer * Supported input *
+        color,
+        // hsv, enter, backdrop
+        close = 'hsv',
+        onColorUpdate = null,
+        onClose = null
+    } = {}){
         let domWrap = document.createElement('div');
         // copy
         let domMain = null;
@@ -821,6 +849,7 @@ class ColorPicker{
                     v,
                     a
                 });
+                ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData)
                 // console.log(ColorPicker.colorData);
 
                 ColorPicker.HSVPos = {
@@ -835,6 +864,9 @@ class ColorPicker{
             const up = () => {
                 document.removeEventListener('mousemove', move);
                 document.removeEventListener('mouseup', up);
+                if(close === 'hsv'){
+                    ColorPicker.Close();
+                }
             };
             document.addEventListener('mousemove', move);
             document.addEventListener('selectstart', DisabledSelection);
@@ -861,7 +893,7 @@ class ColorPicker{
             };
 
             ColorPicker.colorData = ColorHelpers.StandardizeColor(hsva);
-
+            ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData)
             ColorPicker.RenderHSV();
             ColorPicker.RenderSample();
             ColorPicker.RenderHue();
@@ -886,6 +918,7 @@ class ColorPicker{
             ColorPicker.colorData.hsva.a = p;
             ColorPicker.colorData.rgba.a = p;
 
+            ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData);
             ColorPicker.RenderSample();
             ColorPicker.RenderAlpha();
             ColorPicker.RenderInput();
@@ -947,6 +980,7 @@ class ColorPicker{
             console.log(result);
             if(result){
                 ColorPicker.colorData = result;
+                ColorPicker.onColorUpdate && ColorPicker.onColorUpdate(ColorPicker.colorData)
                 ColorPicker.CalcHSVPos();
                 ColorPicker.RenderHSV();
                 ColorPicker.RenderSample();
@@ -994,6 +1028,23 @@ class ColorPicker{
             }
         };
 
+        // close way
+        if(close === 'backdrop'){
+            let backdrop = Get(domWrap, 'backdrop');
+            backdrop.onclick = () => {
+                ColorPicker.Close();
+            };
+        } else if(close === 'enter'){
+            let keyup = (e) => {
+                console.log(e);
+                ColorPicker.Close();
+                document.removeEventListener('keyup', keyup);
+            };
+
+            document.addEventListener('keyup', keyup);
+        }
+
+        ColorPicker.domWrap = domWrap;
         ColorPicker.onColorUpdate = onColorUpdate;
         ColorPicker.onClose = onClose;
         ColorPicker.CalcHSVPos();
@@ -1198,9 +1249,10 @@ class ColorPicker{
 
     static Close(){
         if(ColorPicker.onClose){
-            ColorPicker.onClose();
+            ColorPicker.onClose(ColorPicker.colorData);
         }
 
         ColorPicker.onClose = null;
+        ColorPicker.domWrap.remove()
     }
 }

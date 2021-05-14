@@ -10,10 +10,34 @@
 		body{
 			/*background-color: #bbb;*/
 		}
+
+		body > div{
+			position: absolute;
+			width: 100px;
+			height: 30px;
+			border: 1px solid #dfdfdf;
+		}
+		#div1{
+			top: 10%;
+			left: 10%;
+		}
+
+		#div2{
+			top: 15%;
+			left: 15%;
+		}
+
+		#div3{
+			top: 25%;
+			left: 25%;
+		}
 	</style>
 </head>
 <body>
 
+<div id="div1" data-color="#ff0000" style="background-color:#ff0000;"></div>
+<div id="div2" data-color="#00ff00" style="background-color:#00ff00;"></div>
+<div id="div3" data-color="#0000ff" style="background-color:#0000ff;"></div>
 
 
 <script src="color-picker.js"></script>
