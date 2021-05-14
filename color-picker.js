@@ -66,7 +66,7 @@ const ColorHelpers = {
                 && !isNaN(i.s)
                 && !isNaN(i.v)
             ){
-                inputType.t2 = 'hex';
+                inputType.t2 = 'hsv';
                 hsva = { ...i };
                 rgba = ColorHelpers.HSV2RGB(hsva);
             } else{
@@ -928,10 +928,14 @@ class ColorPicker{
             } else if(t === 'hex'){
                 c = inputs[0].value;
             } else if(t === 'hsv'){
+                let h = (Number(inputs[0].value) / 360);
+                if(h === 360){
+                    h = 0
+                }
                 c = {
-                    h : Number(inputs[0].value),
-                    s : Number(inputs[1].value),
-                    v : Number(inputs[2].value),
+                    h : h,
+                    s : parseInt(inputs[1].value) / 100,
+                    v : parseInt(inputs[2].value) / 100,
                     a : Number(inputs[3].value)
                 };
             } else{
