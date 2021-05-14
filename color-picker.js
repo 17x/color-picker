@@ -725,12 +725,7 @@ class ColorPicker{
     static hueHeight = 10;
     static alphaHeight = 10;
     static colorData = null;
-    static recent = new Array(27).fill({
-        r : 255,
-        g : 0,
-        b : 0,
-        a : 1
-    });
+    static recent = [];
     static inputMode = null;
 
     static Open({
@@ -1046,7 +1041,6 @@ class ColorPicker{
             };
         } else if(close === 'enter'){
             let keyup = (e) => {
-                console.log(e);
                 ColorPicker.Close();
                 document.removeEventListener('keyup', keyup);
             };
@@ -1249,10 +1243,10 @@ class ColorPicker{
     }
 
     static RenderRecent(){
-        ColorPicker.recent.map(({ r, g, b, a }) => {
+        ColorPicker.recent.map((item) => {
             let d = document.createElement('div');
             d.className = 'recent-item';
-            d.setAttribute('style', `background-color:rgba(${ r },${ g },${ b },${ a })`);
+            d.setAttribute('style', `background-color:${ item };`);
             ColorPicker.recentDom.append(d);
         });
     }
@@ -1262,6 +1256,11 @@ class ColorPicker{
             ColorPicker.onClose(ColorPicker.colorData);
         }
 
+        console.log(ColorPicker.colorData);
+        let _l = ColorPicker.recent[ColorPicker.recent.length - 1];
+        if(_l !== ColorPicker.colorData.hexs){
+            ColorPicker.recent.push(ColorPicker.colorData.hexs);
+        }
         ColorPicker.onClose = null;
         ColorPicker.domWrap.remove();
     }
