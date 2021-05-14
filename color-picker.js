@@ -1,4 +1,23 @@
 const ColorHelpers = {
+    ValidateColor : (i) => {
+        let R = ColorHelpers.StandardizeColor(i);
+        let { rgba } = R;
+
+        if(
+            rgba.r < 0 ||
+            rgba.r > 255 ||
+            rgba.g < 0 ||
+            rgba.g > 255 ||
+            rgba.b < 0 ||
+            rgba.b > 255 ||
+            rgba.a < 0 ||
+            rgba.a > 1
+        ){
+            return false;
+        }
+
+        return R;
+    },
     StandardizeColor : (i) => {
         // console.log(i);
         let _f = false;
@@ -101,18 +120,52 @@ const ColorHelpers = {
         };
     },
     HEXs2HEX : (s) => {
-        if(s.length < 7){
+        s = s.substr(1);
+
+        /*
+        refer https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
+        R (red), G (green), B (blue), and A (alpha) are hexadecimal characters (0–9, A–F).
+        A is optional.
+        The three-digit notation (#RGB) is a shorter version of the six-digit form (#RRGGBB).
+        For example, #f09 is the same color as #ff0099.
+        Likewise, the four-digit RGB notation (#RGBA) is a shorter version of the eight-digit form (#RRGGBBAA).
+        For example, #0f38 is the same color as #00ff3388.
+         */
+        let hexa;
+
+        if(s.length === 3){
+            hexa = {
+                r : s[0] + s[0],
+                g : s[1] + s[1],
+                b : s[2] + s[2]
+            };
+        } else if(s.length === 4){
+            hexa = {
+                r : s[0] + s[0],
+                g : s[1] + s[1],
+                b : s[2] + s[2],
+                a : s[3] + s[3]
+            };
+        } else if(s.length === 6){
+            hexa = {
+                r : s.substr(0, 2),
+                g : s.substr(2, 2),
+                b : s.substr(4, 2)
+            };
+        } else if(s.length === 8){
+            hexa = {
+                r : s.substr(0, 2),
+                g : s.substr(2, 2),
+                b : s.substr(4, 2),
+                a : s.substr(6, 2)
+            };
+        }
+
+        if(!hexa){
             throw new Error('Input type error');
         }
-        let hexa = {
-            r : s.substr(1, 2),
-            g : s.substr(3, 2),
-            b : s.substr(5, 2)
-        };
 
-        if(s.substr(7, 2)){
-            hexa.a = s.substr(7, 2);
-        } else{
+        if(!hexa.a){
             hexa.a = 'ff';
         }
 
@@ -797,8 +850,6 @@ class ColorPicker{
         let alphaCanvas = Get(domWrap, 'alphaCanvas');
         let alphaHandle = Get(domWrap, 'alphaHandle');
 
-        hueHandle.style.left = (1 - ColorPicker.colorData.hsva.h) * 100 + '%';
-        alphaHandle.style.left = ColorPicker.colorData.alpha * 100 + '%';
         SetSize(sampleCanvas, ColorPicker.sampleLen, ColorPicker.sampleLen);
         SetSize(hueCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
         SetSize(alphaCanvas, ColorPicker.hueWidth, ColorPicker.hueHeight);
@@ -818,12 +869,11 @@ class ColorPicker{
             ColorPicker.RenderInput();
         });
         CommonHandle(alphaCanvas, alphaHandle, (p) => {
-            console.log('alphaCanvas', p);
             let alphaHex;
 
             p = Number(p.toPrecision(2));
             alphaHex = Math.floor(p * 255)
-                .toString(16);
+                           .toString(16);
             if(alphaHex === '0'){
                 alphaHex += '0';
             }
@@ -852,8 +902,6 @@ class ColorPicker{
             rgb : rgbaDom,
             hsv : hsvDom
         };
-        ColorPicker.modeDomMap = modeDomMap;
-        ColorPicker.inputMode = ColorPicker.colorData.inputType.t2;
         const SetInputMode = (t = 'rgb') => {
             ColorPicker.inputMode = t;
             Object.keys(modeDomMap)
@@ -865,19 +913,57 @@ class ColorPicker{
                       }
                   });
         };
-        const CheckAndCalcInput = () => {
+        const CheckAndCalcInput = (t) => {
+            let c;
+            let inputs = [...modeDomMap[t].getElementsByTagName('input')];
+            let result;
 
+            if(t === 'rgb'){
+                c = {
+                    r : Number(inputs[0].value),
+                    g : Number(inputs[1].value),
+                    b : Number(inputs[2].value),
+                    a : Number(inputs[3].value)
+                };
+            } else if(t === 'hex'){
+                c = inputs[0].value;
+            } else if(t === 'hsv'){
+                c = {
+                    h : Number(inputs[0].value),
+                    s : Number(inputs[1].value),
+                    v : Number(inputs[2].value),
+                    a : Number(inputs[3].value)
+                };
+            } else{
+                return;
+            }
+
+            console.log(t, c);
+
+            result = ColorHelpers.ValidateColor(c);
+
+            console.log(result);
+            if(result){
+                ColorPicker.colorData = result;
+                ColorPicker.CalcHSVPos();
+                ColorPicker.RenderHSV();
+                ColorPicker.RenderSample();
+                ColorPicker.SetHueAndAlpha();
+                ColorPicker.RenderHue();
+                ColorPicker.RenderAlpha();
+            }
         };
         const CommonInputHandle = (t, p) => {
             let inputArr = [...p.getElementsByTagName('input')];
-            // console.log(inputArr);
             inputArr.map(input => {
-                input.onchange = () => {
-                    CheckAndCalcInput();
+                input.onkeyup = () => {
+                    CheckAndCalcInput(t);
                 };
             });
         };
 
+        ColorPicker.modeDomMap = modeDomMap;
+        ColorPicker.inputMode = ColorPicker.colorData.inputType.t2;
         modeSwitch.onclick = () => {
             if(ColorPicker.inputMode === 'rgb'){
                 SetInputMode('hsv');
@@ -901,30 +987,39 @@ class ColorPicker{
             let _ele = event.target;
 
             if(_ele.classList.contains('recent-item')){
-                ColorPicker.a;
+                // ColorPicker.a;
             }
         };
 
         ColorPicker.onColorUpdate = onColorUpdate;
         ColorPicker.onClose = onClose;
-        ColorPicker.HSVPos = {
-            x : ColorPicker.colorData.hsva.s * ColorPicker.w,
-            y : (1 - ColorPicker.colorData.hsva.v) * ColorPicker.HSVHeight
-        };
-        // console.log(ColorPicker.colorData, ColorPicker.HSVPos);
-
+        ColorPicker.CalcHSVPos();
         ColorPicker.hsvCanvas = hsvCanvas;
         ColorPicker.sampleCanvas = sampleCanvas;
         ColorPicker.hueCanvas = hueCanvas;
         ColorPicker.hueHandle = hueHandle;
+        ColorPicker.alphaHandle = alphaHandle;
         ColorPicker.alphaCanvas = alphaCanvas;
         ColorPicker.recentDom = recent;
+        ColorPicker.SetHueAndAlpha();
         ColorPicker.RenderHSV();
         ColorPicker.RenderSample();
         ColorPicker.RenderHue();
         ColorPicker.RenderAlpha();
         ColorPicker.RenderRecent();
         ColorPicker.RenderInput();
+    }
+
+    static CalcHSVPos(){
+        ColorPicker.HSVPos = {
+            x : ColorPicker.colorData.hsva.s * ColorPicker.w,
+            y : (1 - ColorPicker.colorData.hsva.v) * ColorPicker.HSVHeight
+        };
+    }
+
+    static SetHueAndAlpha(){
+        ColorPicker.hueHandle.style.left = (1 - ColorPicker.colorData.hsva.h) * 100 + '%';
+        ColorPicker.alphaHandle.style.left = ColorPicker.colorData.alpha * 100 + '%';
     }
 
     static RenderHSV(color){
@@ -1060,7 +1155,6 @@ class ColorPicker{
 
     static RenderInput(){
         let { rgba, hsva, hexs, hexa } = ColorPicker.colorData;
-        console.log(ColorPicker.colorData);
 
         // rgb
         let arr1 = [...ColorPicker.modeDomMap['rgb'].getElementsByTagName('input')];
@@ -1071,7 +1165,7 @@ class ColorPicker{
 
         // hsv
         let arr2 = [...ColorPicker.modeDomMap['hsv'].getElementsByTagName('input')];
-        let hValue = Math.floor((hsva.h % 360) * 360)
+        let hValue = Math.floor((hsva.h % 360) * 360);
 
         if(hValue === 360){
             hValue = 0;
