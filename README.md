@@ -36,3 +36,6 @@ A function received one **data-result** parameter
 
 `onClose`
 A function triggered after Component closed
+
+#### cancel
+Press escape key to cancel, this will not trigger `color update` or `close` events.
