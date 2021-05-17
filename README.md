@@ -6,19 +6,19 @@ Compatibility: Chrome on OSX.
 #### [Demo](https://17x.github.io/color-picker/)
 
 # How
-####coordinate
+#### coordinate
 Pass in `x` and `y`
  
 Default values : 0
 
 
-####input
+#### input
 Refer `Supported input` in *color-picker.js*
 
 Default values : `rgba(255,0,0,1)`
 
 
-####close (*interactive*)
+#### close (*interactive*)
 
 Pass in `close` with one of values on the below
 
@@ -30,7 +30,7 @@ Pass in `close` with one of values on the below
 
 Default values : **hsv**
 
-####callback
+#### callback
 `onColorUpdate`
 A function received one **data-result** parameter 
 
