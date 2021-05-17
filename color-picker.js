@@ -627,16 +627,18 @@ class ColorPicker{
         .colorPickerWrap .section-recent{
             width: 216px;
             height: 72px;
-            display: grid;
-            margin: 6px auto 0 auto;
-            grid-template-columns: repeat(9, 24px);
+            margin: 14px auto 0 15px;
+            /*display: grid;*/
+            /*grid-template-columns: repeat(9, 24px);*/
         }
         .colorPickerWrap .recent-item{
             width: 12px;
             height: 12px;
-            align-self: center;
-            justify-self: center;
+            /*align-self: center;*/
+            /*justify-self: center;*/
             border-radius: 2px;
+            float: left;
+            margin: 0 12px 12px 0;
         }
         .colorPickerWrap .recent-item:hover{
             cursor:pointer;
@@ -727,6 +729,7 @@ class ColorPicker{
     static colorData = null;
     static recent = [];
     static inputMode = null;
+
 
     static Open({
         x = 0,
@@ -1041,12 +1044,17 @@ class ColorPicker{
             };
         } else if(close === 'enter'){
             let keyup = (e) => {
-                ColorPicker.Close();
-                document.removeEventListener('keyup', keyup);
+                if(e.code.toLowerCase() === 'enter'){
+                    ColorPicker.Close();
+                    document.removeEventListener('keyup', keyup);
+                }
             };
 
             document.addEventListener('keyup', keyup);
         }
+
+        // shortcut close
+        document.addEventListener('keyup', ColorPicker.ShortCloseFunc);
 
         ColorPicker.domWrap = domWrap;
         ColorPicker.onColorUpdate = onColorUpdate;
@@ -1066,6 +1074,13 @@ class ColorPicker{
         ColorPicker.RenderAlpha();
         ColorPicker.RenderRecent();
         ColorPicker.RenderInput();
+    }
+
+    static ShortCloseFunc(e){
+        if(e.code.toLowerCase() === 'escape'){
+            ColorPicker.Close(false);
+            document.removeEventListener('keyup', ColorPicker.ShortCloseFunc);
+        }
     }
 
     static CalcHSVPos(){
@@ -1243,12 +1258,19 @@ class ColorPicker{
     }
 
     static RenderRecent(){
-        ColorPicker.recent.map((item) => {
+        for(let i = ColorPicker.recent.length - 1; i >= 0; i--){
+            let item = ColorPicker.recent[i];
             let d = document.createElement('div');
             d.className = 'recent-item';
             d.setAttribute('style', `background-color:${ item };`);
             ColorPicker.recentDom.append(d);
-        });
+        }
+    }
+
+    static Cancel(){
+        ColorPicker.onClose = null;
+        ColorPicker.domWrap.remove();
+        document.removeEventListener('keyup', ColorPicker.ShortCloseFunc);
     }
 
     static Close(){
@@ -1256,10 +1278,13 @@ class ColorPicker{
             ColorPicker.onClose(ColorPicker.colorData);
         }
 
-        console.log(ColorPicker.colorData);
         let _l = ColorPicker.recent[ColorPicker.recent.length - 1];
-        if(_l !== ColorPicker.colorData.hexs){
-            ColorPicker.recent.push(ColorPicker.colorData.hexs);
+        let _c = ColorPicker.colorData.hexs + ColorPicker.colorData.hexa.a;
+        if(_l !== _c){
+            if(ColorPicker.recent.length === 27){
+                ColorPicker.recent.shift();
+            }
+            ColorPicker.recent.push(_c);
         }
         ColorPicker.onClose = null;
         ColorPicker.domWrap.remove();

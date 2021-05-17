@@ -37,8 +37,9 @@ function Onload(){
             color : div1.dataset.color,
             close : 'hsv',
             onClose : (value) => {
-                div1.dataset.color = value.hexs;
-                div1.style.backgroundColor = value.hexs;
+                let v = value.hexs + value.hexa.a;
+                div1.dataset.color = v;
+                div1.style.backgroundColor = v;
             }
         });
     };
@@ -51,8 +52,9 @@ function Onload(){
             color : div2.dataset.color,
             close : 'enter',
             onClose : (value) => {
-                div2.dataset.color = value.hexs;
-                div2.style.backgroundColor = value.hexs;
+                let v = value.hexs + value.hexa.a;
+                div2.dataset.color = v;
+                div2.style.backgroundColor = v;
             }
         });
     };
