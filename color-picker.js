@@ -741,6 +741,7 @@ class ColorPicker{
         onColorUpdate = null,
         onClose = null
     } = {}){
+        let host = document.createElement('div');
         let domWrap = document.createElement('div');
         // copy
         let domMain = null;
@@ -1024,7 +1025,11 @@ class ColorPicker{
                   CommonInputHandle(k, modeDomMap[k]);
               });
 
-        document.body.append(domWrap);
+        let shadow = host.attachShadow({ mode : 'closed' });
+        host.setAttribute('style', 'position:fixed;width:100%;height:100%;top:0;left:0;');
+
+        shadow.append(domWrap);
+        document.body.append(host);
 
         // recently usage
         let recent = Get(domWrap, 'section-recent');
@@ -1056,6 +1061,7 @@ class ColorPicker{
         // shortcut close
         document.addEventListener('keyup', ColorPicker.ShortCloseFunc);
 
+        ColorPicker.shadowHost = host;
         ColorPicker.domWrap = domWrap;
         ColorPicker.onColorUpdate = onColorUpdate;
         ColorPicker.onClose = onClose;
@@ -1269,7 +1275,7 @@ class ColorPicker{
 
     static Cancel(){
         ColorPicker.onClose = null;
-        ColorPicker.domWrap.remove();
+        ColorPicker.shadowHost.remove();
         document.removeEventListener('keyup', ColorPicker.ShortCloseFunc);
     }
 
@@ -1287,6 +1293,6 @@ class ColorPicker{
             ColorPicker.recent.push(_c);
         }
         ColorPicker.onClose = null;
-        ColorPicker.domWrap.remove();
+        ColorPicker.shadowHost.remove();
     }
 }
